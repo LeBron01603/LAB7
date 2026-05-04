@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRO ACADEMY — Plataforma de Cursos</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text">PRO<strong>ACADEMY</strong></span>
+        </div>
+        <div id="course-info">
+          <div class="course-label">CURSO ACTIVO</div>
+          <div class="course-title" id="course-title-display">Full Stack Dev</div>
+        </div>
+      </div>
+      <div id="skill-tree-container"></div>
+    </aside>
+    <main id="main-content">
+      <div id="welcome-screen">
+        <div class="welcome-inner">
+          <div class="welcome-icon">🏆</div>
+          <h1>Selecciona un tema</h1>
+          <p>Elige una habilidad del panel izquierdo para comenzar tu entrenamiento.</p>
+        </div>
+      </div>
+      <div id="topic-view" class="hidden"></div>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
