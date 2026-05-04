@@ -1,6 +1,5 @@
 // modules/ui.js
-// Construye el árbol de habilidades en el sidebar
-// y el contenido del tema a la derecha.
+// Construye el árbol de habilidades y renderiza el contenido del tema.
 
 import { courseData } from './storage.js';
 
@@ -10,12 +9,10 @@ import { courseData } from './storage.js';
 export function buildSkillTree(container, onSelect) {
   container.innerHTML = '';
 
-  // Título del curso
   const courseTitle = document.getElementById('course-title-display');
   if (courseTitle) courseTitle.textContent = courseData.title;
 
   courseData.phases.forEach(phase => {
-    // Crear <phase-section>
     const section = document.createElement('phase-section');
     section.setAttribute('label', phase.title);
     section.setAttribute('emoji', phase.emoji);
@@ -32,17 +29,11 @@ export function buildSkillTree(container, onSelect) {
     container.appendChild(section);
   });
 
-  // Event delegation — skill-select bubbles up
   container.addEventListener('skill-select', e => {
     const { topicId } = e.detail;
-
-    // Deselect all
     container.querySelectorAll('skill-node').forEach(n => n.removeAttribute('selected'));
-    // Select clicked
     const clicked = container.querySelector(`skill-node[topic-id="${topicId}"]`);
     if (clicked) clicked.setAttribute('selected', '');
-
-    // Find topic data
     const topic = findTopic(topicId);
     if (topic) onSelect(topic);
   });
@@ -57,7 +48,7 @@ function findTopic(id) {
 }
 
 // ─────────────────────────
-//  TOPIC VIEW (main area)
+//  TOPIC VIEW (main)
 // ─────────────────────────
 export function renderTopic(topic) {
   const welcome = document.getElementById('welcome-screen');
@@ -69,29 +60,32 @@ export function renderTopic(topic) {
 
   // ── Header ──
   const header = el('div', 'topic-header');
-  const badge  = el('div', 'topic-badge');
-  badge.textContent = 'TEMA';
+  const eyebrow = el('div', 'topic-eyebrow');
+  eyebrow.textContent = 'TEMA DEL CURSO';
   const meta = el('div', 'topic-meta');
   meta.innerHTML = `<h2>${topic.emoji} ${topic.title}</h2><p>${topic.description}</p>`;
-  header.append(badge, meta);
+  header.append(eyebrow, meta);
   view.appendChild(header);
 
   // ── Main video ──
   const mvBlock = el('div', 'main-video-block');
-  const mvLabel = el('div', 'section-label');
-  mvLabel.textContent = '▶ VIDEO COMPLETO';
+  const mvLabel = sectionLabel('▶', 'VIDEO COMPLETO');
+  const wrap = el('div', 'video-wrap');
   const embed = buildVideoEmbed(topic.mainVideo.youtubeId, 0);
-  const mvMeta = el('p', '');
-  mvMeta.style.cssText = 'color:#9090b0;font-size:13px;margin-top:8px;';
-  mvMeta.innerHTML = `<strong style="color:#f0f0f8">${topic.mainVideo.title}</strong> &nbsp;·&nbsp; ${topic.mainVideo.duration}`;
-  mvBlock.append(mvLabel, embed, mvMeta);
+  const vmeta = el('div', 'video-meta');
+  vmeta.innerHTML = `
+    <span class="video-meta-title">${topic.mainVideo.title}</span>
+    <span class="video-duration">⏱ ${topic.mainVideo.duration}</span>
+  `;
+  wrap.appendChild(embed);
+  wrap.appendChild(vmeta);
+  mvBlock.append(mvLabel, wrap);
   view.appendChild(mvBlock);
 
-  // ── Highlights del video principal ──
+  // ── Highlights ──
   if (topic.highlights?.length) {
     const hlSection = el('div', 'highlights-section');
-    const hlLabel   = el('div', 'section-label');
-    hlLabel.textContent = '⚡ HIGHLIGHTS';
+    const hlLabel = sectionLabel('⚡', 'HIGHLIGHTS');
     const hlGrid = el('div', 'highlights-grid');
 
     topic.highlights.forEach(h => {
@@ -103,7 +97,8 @@ export function renderTopic(topic) {
       card.title = `Ir a ${h.time}`;
       card.addEventListener('click', () => {
         const sec = timeToSeconds(h.time);
-        scrollToEmbed(embed, sec);
+        reloadEmbed(embed, topic.mainVideo.youtubeId, sec);
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       hlGrid.appendChild(card);
     });
@@ -112,16 +107,14 @@ export function renderTopic(topic) {
     view.appendChild(hlSection);
   }
 
-  // ── Capítulos (si los tiene) ──
+  // ── Chapters ──
   if (topic.chapters?.length) {
     const chSection = el('div', 'chapters-section');
-    const chLabel   = el('div', 'section-label');
-    chLabel.textContent = '📚 CAPÍTULOS';
+    const chLabel = sectionLabel('📚', 'CAPÍTULOS');
     const chList = el('div', 'chapter-list');
 
     topic.chapters.forEach((ch, idx) => {
-      const card = buildChapterCard(ch, idx + 1);
-      chList.appendChild(card);
+      chList.appendChild(buildChapterCard(ch, idx + 1));
     });
 
     chSection.append(chLabel, chList);
@@ -132,17 +125,29 @@ export function renderTopic(topic) {
 // ─────────────────────────
 //  HELPERS
 // ─────────────────────────
-function el(tag, className) {
+function el(tag, cls) {
   const e = document.createElement(tag);
-  if (className) e.className = className;
+  if (cls) e.className = cls;
   return e;
+}
+
+function sectionLabel(icon, text) {
+  const div = el('div', 'section-label');
+  div.innerHTML = `<span class="sl-icon">${icon}</span>${text}`;
+  return div;
 }
 
 function buildVideoEmbed(youtubeId, startAt = 0) {
   const wrapper = el('div', 'video-embed');
+  wrapper.dataset.ytId = youtubeId;
   const src = `https://www.youtube.com/embed/${youtubeId}?start=${startAt}&rel=0&modestbranding=1`;
   wrapper.innerHTML = `<iframe src="${src}" allowfullscreen loading="lazy"></iframe>`;
   return wrapper;
+}
+
+function reloadEmbed(embedEl, youtubeId, startAt) {
+  const src = `https://www.youtube.com/embed/${youtubeId}?start=${startAt}&rel=0&modestbranding=1&autoplay=1`;
+  embedEl.innerHTML = `<iframe src="${src}" allowfullscreen></iframe>`;
 }
 
 function buildChapterCard(ch, num) {
@@ -159,10 +164,11 @@ function buildChapterCard(ch, num) {
   `;
 
   const videoSection = el('div', 'chapter-video');
+  const wrap = el('div', 'video-wrap');
   const embed = buildVideoEmbed(ch.youtubeId, ch.startAt);
-  videoSection.appendChild(embed);
+  wrap.appendChild(embed);
+  videoSection.appendChild(wrap);
 
-  // Mini highlights del capítulo
   if (ch.highlights?.length) {
     const mhContainer = el('div', 'chapter-highlights');
     ch.highlights.forEach(h => {
@@ -170,20 +176,15 @@ function buildChapterCard(ch, num) {
       mh.innerHTML = `<span class="mh-time">${h.time}</span>${h.label}`;
       mh.addEventListener('click', e => {
         e.stopPropagation();
-        const sec = timeToSeconds(h.time);
-        // Rebuild iframe with correct start
-        const newEmbed = buildVideoEmbed(ch.youtubeId, sec);
-        embed.replaceWith(newEmbed);
+        reloadEmbed(embed, ch.youtubeId, timeToSeconds(h.time));
       });
       mhContainer.appendChild(mh);
     });
     videoSection.appendChild(mhContainer);
   }
 
-  // Toggle expand
   header.addEventListener('click', () => {
     const isOpen = card.classList.contains('expanded');
-    // Close all others
     document.querySelectorAll('.chapter-card.expanded').forEach(c => c.classList.remove('expanded'));
     if (!isOpen) card.classList.add('expanded');
   });
@@ -192,18 +193,9 @@ function buildChapterCard(ch, num) {
   return card;
 }
 
-function timeToSeconds(timeStr) {
-  const parts = timeStr.split(':').map(Number);
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  return parts[0];
-}
-
-function scrollToEmbed(embedEl, startAt) {
-  // Reload iframe with new startAt
-  const iframe = embedEl.querySelector('iframe');
-  if (!iframe) return;
-  const current = iframe.src.replace(/start=\d+/, `start=${startAt}`);
-  iframe.src = current;
-  embedEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function timeToSeconds(t) {
+  const p = t.split(':').map(Number);
+  if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+  if (p.length === 2) return p[0] * 60 + p[1];
+  return p[0];
 }

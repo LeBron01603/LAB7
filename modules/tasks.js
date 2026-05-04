@@ -1,8 +1,9 @@
-// modules/tasks.js
-// Web Components: <skill-node> y <phase-section>
+// modules/tasks.js — Web Components
+// <skill-node>  y  <phase-section>
+// Tema deportivo light · naranja + azul pizarrón
 
 // ─────────────────────────────────────────
-//  SKILL-NODE  — cubo/cuadradito clickeable
+//  SKILL-NODE
 // ─────────────────────────────────────────
 class SkillNode extends HTMLElement {
   static get observedAttributes() {
@@ -17,6 +18,7 @@ class SkillNode extends HTMLElement {
   connectedCallback() {
     this.render();
     this.shadowRoot.querySelector('.node').addEventListener('click', () => {
+      if (this.getAttribute('state') === 'locked') return;
       this.dispatchEvent(new CustomEvent('skill-select', {
         bubbles: true,
         composed: true,
@@ -25,174 +27,163 @@ class SkillNode extends HTMLElement {
     });
   }
 
-  attributeChangedCallback() {
-    this.render();
-  }
+  attributeChangedCallback() { this.render(); }
 
   render() {
     const label    = this.getAttribute('label') || '?';
-    const emoji    = this.getAttribute('emoji') || '';
-    const state    = this.getAttribute('state') || 'locked';   // locked | available | completed
+    const emoji    = this.getAttribute('emoji') || '📘';
+    const state    = this.getAttribute('state') || 'available';
     const selected = this.hasAttribute('selected');
 
     this.shadowRoot.innerHTML = `
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700;900&display=swap');
+
         :host { display: block; }
 
         .node {
           position: relative;
-          width: 72px;
-          height: 72px;
+          width: 88px;
+          height: 88px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           user-select: none;
-          transition: transform .15s cubic-bezier(.4,0,.2,1),
-                      box-shadow .15s cubic-bezier(.4,0,.2,1);
-          background: var(--node-bg, #16161f);
-          border: 1.5px solid var(--node-border, #2a2a3a);
-          gap: 3px;
+          gap: 5px;
+          transition:
+            transform .15s cubic-bezier(.4,0,.2,1),
+            box-shadow .15s cubic-bezier(.4,0,.2,1),
+            border-color .15s;
+
+          /* Base: azul pizarrón claro */
+          background: linear-gradient(160deg, #232d4a 0%, #1a2035 100%);
+          border: 2px solid #2a3555;
+          box-shadow: 0 2px 8px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05);
         }
 
-        /* State: completed */
+        /* ── States ── */
+
+        /* completed: toque azul eléctrico */
         :host([state="completed"]) .node {
-          --node-bg: #131320;
-          --node-border: #6366f1;
-          background: linear-gradient(135deg, #12122a 0%, #1a1a30 100%);
-          border-color: #6366f1;
+          background: linear-gradient(160deg, #1e3a8a 0%, #1a2d70 100%);
+          border-color: #3b82f6;
+          box-shadow: 0 2px 10px rgba(59,130,246,.3), inset 0 1px 0 rgba(255,255,255,.08);
         }
 
-        /* State: available */
+        /* available: base normal */
         :host([state="available"]) .node {
-          --node-bg: #16161f;
-          --node-border: #3a3a55;
-          background: linear-gradient(135deg, #15151e 0%, #1c1c28 100%);
+          background: linear-gradient(160deg, #232d4a 0%, #1a2035 100%);
+          border-color: #2a3555;
         }
 
-        /* State: locked */
+        /* locked: apagado */
         :host([state="locked"]) .node {
-          opacity: .35;
-          filter: grayscale(.6);
+          opacity: .3;
+          filter: grayscale(.7);
           cursor: not-allowed;
         }
 
-        /* Selected */
+        /* selected: naranja fuego */
         :host([selected]) .node {
-          border-color: #ff1a6b !important;
-          background: linear-gradient(135deg, #1f1020 0%, #22102a 100%) !important;
-          box-shadow: 0 0 0 2px #ff1a6b44, 0 0 16px #ff1a6b55, inset 0 1px 0 #ff1a6b22 !important;
-          transform: scale(1.07);
+          background: linear-gradient(160deg, #7a2800 0%, #ff5c00 100%) !important;
+          border-color: #ff5c00 !important;
+          box-shadow:
+            0 0 0 3px rgba(255,92,0,.25),
+            0 6px 20px rgba(255,92,0,.35),
+            inset 0 1px 0 rgba(255,255,255,.15) !important;
+          transform: scale(1.08) translateY(-2px) !important;
         }
 
-        :host([state="completed"]) .node:hover:not([selected]),
-        :host([state="available"]) .node:hover {
-          transform: translateY(-2px) scale(1.04);
-          box-shadow: 0 4px 16px rgba(99,102,241,.3);
-          border-color: #6366f1;
+        /* hover (no locked, no selected) */
+        :host(:not([state="locked"]):not([selected])) .node:hover {
+          transform: translateY(-3px) scale(1.05);
+          border-color: #ff5c00;
+          box-shadow: 0 6px 18px rgba(255,92,0,.28), inset 0 1px 0 rgba(255,255,255,.08);
         }
 
+        /* ── Emoji ── */
         .node-emoji {
-          font-size: 22px;
+          font-size: 26px;
           line-height: 1;
+          filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
         }
 
+        :host([state="locked"]) .node-emoji { filter: grayscale(1); }
+
+        /* ── Label ── */
         .node-label {
           font-family: 'Barlow Condensed', sans-serif;
-          font-size: 9.5px;
+          font-size: 10.5px;
           font-weight: 700;
-          letter-spacing: .06em;
+          letter-spacing: .08em;
           text-transform: uppercase;
-          color: #9090b0;
+          color: rgba(240,244,255,.55);
           text-align: center;
-          max-width: 64px;
+          max-width: 76px;
           line-height: 1.1;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
-        :host([state="completed"]) .node-label {
-          color: #a0a0d0;
-        }
+        :host([state="completed"]) .node-label { color: rgba(147,197,253,.75); }
+        :host([selected]) .node-label { color: rgba(255,255,255,.9) !important; }
 
-        :host([selected]) .node-label {
-          color: #ff1a6b !important;
-        }
-
-        /* Completed checkmark badge */
+        /* ── Badge completado ── */
         .badge {
           display: none;
           position: absolute;
-          top: -5px;
-          right: -5px;
-          width: 14px;
-          height: 14px;
-          background: #6366f1;
-          border: 1.5px solid #0a0a0f;
+          top: -6px; right: -6px;
+          width: 18px; height: 18px;
+          background: #3b82f6;
+          border: 2px solid #f0f2f5;
           border-radius: 50%;
           align-items: center;
           justify-content: center;
-          font-size: 7px;
+          font-size: 8px;
           color: #fff;
           font-weight: 900;
         }
 
-        :host([state="completed"]) .badge {
-          display: flex;
-        }
+        :host([state="completed"]) .badge { display: flex; }
+        :host([selected]) .badge { background: #fff; color: #ff5c00; border-color: #ff5c00; }
 
-        :host([selected]) .badge {
-          background: #ff1a6b;
-        }
-
-        /* Connector dot (bottom center) — decorative */
-        .dot {
+        /* ── Stripe bottom — decorativa ── */
+        .stripe {
           position: absolute;
-          bottom: -5px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #3a3a55;
+          bottom: 0; left: 0; right: 0;
+          height: 3px;
+          background: rgba(255,255,255,.06);
         }
-
-        :host([state="completed"]) .dot { background: #6366f1; }
-        :host([selected]) .dot { background: #ff1a6b; }
+        :host([state="completed"]) .stripe { background: #3b82f6; opacity: .6; }
+        :host([selected]) .stripe { background: rgba(255,255,255,.3); }
       </style>
 
       <div class="node" title="${label}">
         <span class="badge">✓</span>
         <span class="node-emoji">${emoji}</span>
         <span class="node-label">${label}</span>
-        <span class="dot"></span>
+        <span class="stripe"></span>
       </div>
     `;
   }
 }
 
-// ─────────────────────────────────────────────────────
-//  PHASE-SECTION  — agrupa un conjunto de skill-nodes
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+//  PHASE-SECTION
+// ─────────────────────────────────────────
 class PhaseSection extends HTMLElement {
-  static get observedAttributes() {
-    return ['label', 'emoji'];
-  }
+  static get observedAttributes() { return ['label', 'emoji']; }
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
-  connectedCallback() {
-    this.render();
-  }
-
-  attributeChangedCallback() {
-    this.render();
-  }
+  connectedCallback() { this.render(); }
+  attributeChangedCallback() { this.render(); }
 
   render() {
     const label = this.getAttribute('label') || 'FASE';
@@ -200,52 +191,53 @@ class PhaseSection extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; margin-bottom: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&display=swap');
+
+        :host { display: block; margin-bottom: 24px; }
 
         .phase-header {
           display: flex;
           align-items: center;
-          gap: 6px;
-          margin-bottom: 10px;
-          padding-left: 2px;
+          gap: 8px;
+          margin-bottom: 12px;
+          padding: 0 2px;
         }
 
-        .phase-emoji { font-size: 13px; }
+        .phase-pip {
+          width: 4px;
+          height: 16px;
+          background: #ff5c00;
+          flex-shrink: 0;
+        }
 
         .phase-label {
           font-family: 'Barlow Condensed', sans-serif;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 700;
-          letter-spacing: .14em;
-          color: #55556a;
+          letter-spacing: .18em;
+          color: rgba(136,152,187,.7);
           text-transform: uppercase;
-          flex: 1;
         }
 
         .phase-line {
           flex: 1;
           height: 1px;
-          background: linear-gradient(90deg, #2a2a3a 0%, transparent 100%);
+          background: rgba(42,53,85,.8);
         }
 
         .nodes-grid {
           display: flex;
           flex-wrap: wrap;
-          gap: 6px;
+          gap: 8px;
           padding: 2px;
-        }
-
-        ::slotted(skill-node) {
-          /* slot content styling via host */
         }
       </style>
 
       <div class="phase-header">
-        <span class="phase-emoji">${emoji}</span>
-        <span class="phase-label">${label}</span>
+        <span class="phase-pip"></span>
+        <span class="phase-label">${emoji} ${label}</span>
         <span class="phase-line"></span>
       </div>
-
       <div class="nodes-grid">
         <slot></slot>
       </div>
@@ -253,6 +245,5 @@ class PhaseSection extends HTMLElement {
   }
 }
 
-// Register
 customElements.define('skill-node', SkillNode);
 customElements.define('phase-section', PhaseSection);
